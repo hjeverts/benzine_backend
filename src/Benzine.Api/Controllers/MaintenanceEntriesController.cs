@@ -12,16 +12,18 @@ namespace Benzine.Api.Controllers;
 [Route("api/vehicles/{vehicleId:int}/maintenance")]
 public class MaintenanceEntriesController(BenzineDbContext db) : ControllerBase
 {
-    private async Task<Vehicle?> GetOwnedVehicle(int vehicleId)
+    // Eigenaar én iedereen met wie het voertuig gedeeld is, mogen onderhoud lezen/toevoegen/verwijderen.
+    private async Task<Vehicle?> GetAccessibleVehicle(int vehicleId)
     {
         var userId = this.GetUserId();
-        return await db.Vehicles.SingleOrDefaultAsync(v => v.Id == vehicleId && v.UserId == userId);
+        return await db.Vehicles.SingleOrDefaultAsync(v =>
+            v.Id == vehicleId && (v.UserId == userId || v.Shares.Any(s => s.UserId == userId)));
     }
 
     [HttpGet]
     public async Task<ActionResult<List<MaintenanceEntryResponse>>> GetAll(int vehicleId)
     {
-        if (await GetOwnedVehicle(vehicleId) is null) return NotFound();
+        if (await GetAccessibleVehicle(vehicleId) is null) return NotFound();
 
         var entries = await db.MaintenanceEntries
             .Include(m => m.MaintenanceType)
@@ -37,7 +39,7 @@ public class MaintenanceEntriesController(BenzineDbContext db) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<MaintenanceEntryResponse>> Create(int vehicleId, MaintenanceEntryRequest request)
     {
-        if (await GetOwnedVehicle(vehicleId) is null) return NotFound();
+        if (await GetAccessibleVehicle(vehicleId) is null) return NotFound();
 
         var type = await db.MaintenanceTypes.FindAsync(request.MaintenanceTypeId);
         if (type is null) return BadRequest("Onbekend onderhoudstype.");
@@ -61,7 +63,7 @@ public class MaintenanceEntriesController(BenzineDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int vehicleId, int id)
     {
-        if (await GetOwnedVehicle(vehicleId) is null) return NotFound();
+        if (await GetAccessibleVehicle(vehicleId) is null) return NotFound();
 
         var entry = await db.MaintenanceEntries.SingleOrDefaultAsync(m => m.Id == id && m.VehicleId == vehicleId);
         if (entry is null) return NotFound();

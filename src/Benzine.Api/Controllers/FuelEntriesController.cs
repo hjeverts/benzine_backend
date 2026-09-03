@@ -12,10 +12,12 @@ namespace Benzine.Api.Controllers;
 [Route("api/vehicles/{vehicleId:int}/fuel")]
 public class FuelEntriesController(BenzineDbContext db) : ControllerBase
 {
-    private async Task<Vehicle?> GetOwnedVehicle(int vehicleId)
+    // Eigenaar én iedereen met wie het voertuig gedeeld is, mogen tankbeurten lezen/toevoegen/verwijderen.
+    private async Task<Vehicle?> GetAccessibleVehicle(int vehicleId)
     {
         var userId = this.GetUserId();
-        return await db.Vehicles.SingleOrDefaultAsync(v => v.Id == vehicleId && v.UserId == userId);
+        return await db.Vehicles.SingleOrDefaultAsync(v =>
+            v.Id == vehicleId && (v.UserId == userId || v.Shares.Any(s => s.UserId == userId)));
     }
 
     private static FuelEntryResponse ToResponse(FuelEntry f) => new(
@@ -24,7 +26,7 @@ public class FuelEntriesController(BenzineDbContext db) : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<FuelEntryResponse>>> GetAll(int vehicleId)
     {
-        if (await GetOwnedVehicle(vehicleId) is null) return NotFound();
+        if (await GetAccessibleVehicle(vehicleId) is null) return NotFound();
 
         var entries = await db.FuelEntries
             .Where(f => f.VehicleId == vehicleId)
@@ -38,7 +40,7 @@ public class FuelEntriesController(BenzineDbContext db) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<FuelEntryResponse>> Create(int vehicleId, FuelEntryRequest request)
     {
-        if (await GetOwnedVehicle(vehicleId) is null) return NotFound();
+        if (await GetAccessibleVehicle(vehicleId) is null) return NotFound();
 
         var entry = new FuelEntry
         {
@@ -61,7 +63,7 @@ public class FuelEntriesController(BenzineDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int vehicleId, int id)
     {
-        if (await GetOwnedVehicle(vehicleId) is null) return NotFound();
+        if (await GetAccessibleVehicle(vehicleId) is null) return NotFound();
 
         var entry = await db.FuelEntries.SingleOrDefaultAsync(f => f.Id == id && f.VehicleId == vehicleId);
         if (entry is null) return NotFound();
@@ -75,7 +77,7 @@ public class FuelEntriesController(BenzineDbContext db) : ControllerBase
     [HttpGet("/api/vehicles/{vehicleId:int}/stats")]
     public async Task<ActionResult<VehicleStatsResponse>> GetStats(int vehicleId)
     {
-        if (await GetOwnedVehicle(vehicleId) is null) return NotFound();
+        if (await GetAccessibleVehicle(vehicleId) is null) return NotFound();
 
         var entries = await db.FuelEntries
             .Where(f => f.VehicleId == vehicleId)

@@ -2,7 +2,20 @@ namespace Benzine.Api.DTOs;
 
 public record VehicleRequest(string Naam, string? Merk, string? Type, int? Bouwjaar, DateOnly? Aankoopdatum);
 
-public record VehicleResponse(int Id, string Naam, string? Merk, string? Type, int? Bouwjaar, DateOnly? Aankoopdatum);
+public record VehicleResponse(
+    int Id,
+    string Naam,
+    string? Merk,
+    string? Type,
+    int? Bouwjaar,
+    DateOnly? Aankoopdatum,
+    bool IsOwner,
+    string EigenaarNaam
+);
+
+public record ShareVehicleRequest(string Email);
+
+public record VehicleShareResponse(Guid UserId, string Email, string Name, DateTime CreatedAt);
 
 public record FuelEntryRequest(
     DateOnly Datum,

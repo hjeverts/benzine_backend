@@ -9,4 +9,5 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Vehicle> Vehicles { get; set; } = [];
+    public ICollection<VehicleShare> SharedVehicles { get; set; } = [];
 }

@@ -10,6 +10,7 @@ public class BenzineDbContext(DbContextOptions<BenzineDbContext> options) : DbCo
     public DbSet<FuelEntry> FuelEntries => Set<FuelEntry>();
     public DbSet<MaintenanceType> MaintenanceTypes => Set<MaintenanceType>();
     public DbSet<MaintenanceEntry> MaintenanceEntries => Set<MaintenanceEntry>();
+    public DbSet<VehicleShare> VehicleShares => Set<VehicleShare>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,5 +41,21 @@ public class BenzineDbContext(DbContextOptions<BenzineDbContext> options) : DbCo
             .WithMany(t => t.MaintenanceEntries)
             .HasForeignKey(m => m.MaintenanceTypeId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<VehicleShare>()
+            .HasOne(s => s.Vehicle)
+            .WithMany(v => v.Shares)
+            .HasForeignKey(s => s.VehicleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VehicleShare>()
+            .HasOne(s => s.User)
+            .WithMany(u => u.SharedVehicles)
+            .HasForeignKey(s => s.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VehicleShare>()
+            .HasIndex(s => new { s.VehicleId, s.UserId })
+            .IsUnique();
     }
 }
