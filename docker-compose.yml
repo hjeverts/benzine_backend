@@ -1,0 +1,41 @@
+# Losse compose voor alleen backend + postgres (ontwikkeling/tests).
+# Voor de volledige stack (postgres + api + frontend) met git-pull/update-script,
+# zie ../benzine_deploy/ (docker-compose.yml + update.sh).
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-benzine}
+      POSTGRES_USER: ${POSTGRES_USER:-benzine}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?zet POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432" # alleen lokaal bereikbaar; niet nodig in productie
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-benzine}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-benzine};Username=${POSTGRES_USER:-benzine};Password=${POSTGRES_PASSWORD}"
+      Jwt__Key: ${JWT_KEY:?zet JWT_KEY in .env (minimaal 32 tekens)}
+      Jwt__Issuer: "Benzine.Api"
+      Jwt__Audience: "Benzine.Clients"
+      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN:-http://localhost:4200}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+    ports:
+      - "5080:8080"
+
+volumes:
+  postgres_data:

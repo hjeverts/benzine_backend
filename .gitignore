@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+.env
+
+# Migratiescript (Python/uv)
+scripts/.venv/
