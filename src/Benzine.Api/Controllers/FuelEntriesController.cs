@@ -91,9 +91,15 @@ public class FuelEntriesController(BenzineDbContext db) : ControllerBase
         var totaalLiters = entries.Sum(f => f.Volume);
         var eersteOdometer = entries.First().Odometer;
         var laatsteOdometer = entries.Last().Odometer;
-        var afstand = laatsteOdometer - eersteOdometer;
+        var geldigeTankbeurten = entries
+            .Skip(1)
+            .Select((entry, index) => new { Entry = entry, Afstand = entry.Odometer - entries[index].Odometer })
+            .Where(x => !x.Entry.Vergeten && x.Afstand > 0)
+            .ToList();
+        var afstand = geldigeTankbeurten.Sum(x => x.Afstand);
+        var litersVoorVerbruik = geldigeTankbeurten.Sum(x => x.Entry.Volume);
 
-        var verbruikL100km = afstand > 0 ? (totaalLiters / afstand) * 100m : 0;
+        var verbruikL100km = afstand > 0 ? (litersVoorVerbruik / afstand) * 100m : 0;
         var gemPrijsPerLiter = totaalLiters > 0 ? totaleKosten / totaalLiters : 0;
 
         return Ok(new VehicleStatsResponse(
