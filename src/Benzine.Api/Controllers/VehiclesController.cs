@@ -22,7 +22,8 @@ public class VehiclesController(BenzineDbContext db) : ControllerBase
         await db.Vehicles.SingleOrDefaultAsync(v => v.Id == vehicleId && v.UserId == userId);
 
     private static VehicleResponse ToResponse(Vehicle v, Guid userId) => new(
-        v.Id, v.Naam, v.Merk, v.Type, v.Bouwjaar, v.Aankoopdatum, v.UserId == userId, v.User!.Name);
+        v.Id, v.Naam, v.Merk, v.Type, v.Bouwjaar, v.Aankoopdatum, v.UserId == userId, v.User!.Name,
+        AuthController.ToDataUrl(v.FotoContentType, v.Foto));
 
     [HttpGet]
     public async Task<ActionResult<List<VehicleResponse>>> GetAll()
@@ -97,6 +98,23 @@ public class VehiclesController(BenzineDbContext db) : ControllerBase
         db.Vehicles.Remove(vehicle);
         await db.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpPut("{id:int}/photo")]
+    public async Task<ActionResult<VehicleResponse>> UpdatePhoto(int id, IFormFile file)
+    {
+        var userId = this.GetUserId();
+        var vehicle = await GetOwnedVehicle(id, userId);
+        if (vehicle is null) return NotFound();
+
+        var image = await AuthController.ReadImage(file);
+        if (image.Error is not null) return BadRequest(image.Error);
+
+        vehicle.Foto = image.Content;
+        vehicle.FotoContentType = image.ContentType;
+        await db.SaveChangesAsync();
+        await db.Entry(vehicle).Reference(v => v.User).LoadAsync();
+        return Ok(ToResponse(vehicle, userId));
     }
 
     // --- Delen met een 2e account (bv. partner) ---

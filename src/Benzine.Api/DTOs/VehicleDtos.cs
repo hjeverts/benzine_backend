@@ -10,7 +10,8 @@ public record VehicleResponse(
     int? Bouwjaar,
     DateOnly? Aankoopdatum,
     bool IsOwner,
-    string EigenaarNaam
+    string EigenaarNaam,
+    string? FotoDataUrl
 );
 
 public record ShareVehicleRequest(string Email);

@@ -119,6 +119,12 @@ namespace Benzine.Api.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<byte[]>("Avatar")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("AvatarContentType")
+                        .HasColumnType("text");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
@@ -152,6 +158,12 @@ namespace Benzine.Api.Data.Migrations
 
                     b.Property<int?>("Bouwjaar")
                         .HasColumnType("integer");
+
+                    b.Property<byte[]>("Foto")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("FotoContentType")
+                        .HasColumnType("text");
 
                     b.Property<string>("Merk")
                         .HasColumnType("text");
