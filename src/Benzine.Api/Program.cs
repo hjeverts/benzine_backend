@@ -17,6 +17,7 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddSingleton<EmailService>();
+builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection("Admin"));
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("Jwt:Key ontbreekt.");
@@ -63,6 +64,15 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BenzineDbContext>();
     db.Database.Migrate();
+
+    var adminOptions = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AdminOptions>>().Value;
+    var bootstrapEmails = adminOptions.GetBootstrapEmails();
+    if (bootstrapEmails.Count > 0)
+    {
+        var bootstrapUsers = db.Users.Where(user => bootstrapEmails.Contains(user.Email)).ToList();
+        foreach (var user in bootstrapUsers) user.IsAdmin = true;
+        db.SaveChanges();
+    }
 }
 
 if (app.Environment.IsDevelopment())

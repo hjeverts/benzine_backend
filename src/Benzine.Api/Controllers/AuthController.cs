@@ -118,7 +118,7 @@ public class AuthController(
     public async Task<ActionResult<ProfileResponse>> GetProfile()
     {
         var user = await GetCurrentUser();
-        return Ok(new ProfileResponse(user.Email, user.Name, ToDataUrl(user.AvatarContentType, user.Avatar)));
+        return Ok(new ProfileResponse(user.Email, user.Name, ToDataUrl(user.AvatarContentType, user.Avatar), user.IsAdmin));
     }
 
     [Authorize]
@@ -165,14 +165,14 @@ public class AuthController(
         user.Avatar = image.Content;
         user.AvatarContentType = image.ContentType;
         await db.SaveChangesAsync();
-        return Ok(new ProfileResponse(user.Email, user.Name, ToDataUrl(user.AvatarContentType, user.Avatar)));
+        return Ok(new ProfileResponse(user.Email, user.Name, ToDataUrl(user.AvatarContentType, user.Avatar), user.IsAdmin));
     }
 
     private async Task<User> GetCurrentUser() =>
         await db.Users.SingleAsync(u => u.Id == this.GetUserId());
 
     private static AuthResponse ToAuthResponse(User user, string token) =>
-        new(token, user.Email, user.Name, ToDataUrl(user.AvatarContentType, user.Avatar));
+        new(token, user.Email, user.Name, ToDataUrl(user.AvatarContentType, user.Avatar), user.IsAdmin);
 
     internal static async Task<(byte[]? Content, string? ContentType, string? Error)> ReadImage(IFormFile? file)
     {

@@ -40,6 +40,13 @@ EMAIL_FRONTEND_URL=https://benzine.example.com
 Voor lokale ontwikkeling is `EMAIL_FRONTEND_URL=http://localhost:4200`. Gebruik voor
 een provider die dit vereist een app-wachtwoord, niet het normale accountwachtwoord.
 
+## Gebruikersbeheer
+
+Zet `ADMIN_EMAILS` in `.env` op het e-mailadres van de eerste beheerder (meerdere
+adressen scheid je met komma's). Bij opstarten krijgen bestaande accounts met die
+e-mailadressen de beheerrol. Een beheerder kan daarna via de gebruikersbeheerpagina
+andere accounts bewerken, promoveren of verwijderen.
+
 ## Lokaal draaien zonder Docker (development)
 
 ```bash
