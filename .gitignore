@@ -4,6 +4,7 @@ obj/
 .vscode/
 *.user
 .env
+.idea/
 
 # Migratiescript (Python/uv)
 scripts/.venv/
