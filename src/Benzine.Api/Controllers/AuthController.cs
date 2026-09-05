@@ -5,12 +5,19 @@ using Benzine.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Mail;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace Benzine.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(BenzineDbContext db, JwtTokenService jwtService) : ControllerBase
+public class AuthController(
+    BenzineDbContext db,
+    JwtTokenService jwtService,
+    EmailService emailService,
+    ILogger<AuthController> logger) : ControllerBase
 {
     private const long MaxImageSize = 2 * 1024 * 1024;
 
@@ -43,6 +50,67 @@ public class AuthController(BenzineDbContext db, JwtTokenService jwtService) : C
 
         var token = jwtService.GenerateToken(user);
         return Ok(ToAuthResponse(user, token));
+    }
+
+    [HttpPost("password-reset")]
+    public async Task<IActionResult> RequestPasswordReset(
+        RequestPasswordResetRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!emailService.IsConfigured)
+        {
+            logger.LogError("Wachtwoordreset aangevraagd terwijl e-mail niet is geconfigureerd.");
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                "Wachtwoord resetten is tijdelijk niet beschikbaar.");
+        }
+
+        var email = request.Email.Trim().ToLowerInvariant();
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Email == email, cancellationToken);
+        if (user is null)
+            return Accepted();
+
+        var token = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+        user.PasswordResetTokenHash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token));
+        user.PasswordResetExpiresAt = DateTime.UtcNow.AddHours(1);
+        await db.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await emailService.SendPasswordResetAsync(user.Email, token, cancellationToken);
+        }
+        catch (SmtpException exception)
+        {
+            user.PasswordResetTokenHash = null;
+            user.PasswordResetExpiresAt = null;
+            await db.SaveChangesAsync(cancellationToken);
+            logger.LogError(exception, "Versturen van wachtwoordreset naar {Email} mislukt.", user.Email);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                "Wachtwoord resetten is tijdelijk niet beschikbaar.");
+        }
+
+        return Accepted();
+    }
+
+    [HttpPost("password-reset/confirm")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        if (request.NewPassword.Length < 8)
+            return BadRequest("Het nieuwe wachtwoord moet minimaal 8 tekens bevatten.");
+
+        var user = await db.Users.SingleOrDefaultAsync(
+            u => u.Email == request.Email.Trim().ToLowerInvariant(),
+            cancellationToken);
+        if (user?.PasswordResetTokenHash is null
+            || user.PasswordResetExpiresAt <= DateTime.UtcNow
+            || !TryGetTokenHash(request.Token, out var tokenHash)
+            || !CryptographicOperations.FixedTimeEquals(tokenHash, user.PasswordResetTokenHash))
+            return BadRequest("Deze resetlink is ongeldig of verlopen.");
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.PasswordResetTokenHash = null;
+        user.PasswordResetExpiresAt = null;
+        await db.SaveChangesAsync(cancellationToken);
+        return NoContent();
     }
 
     [Authorize]
@@ -130,4 +198,21 @@ public class AuthController(BenzineDbContext db, JwtTokenService jwtService) : C
 
     internal static string? ToDataUrl(string? contentType, byte[]? content) =>
         content is null || contentType is null ? null : $"data:{contentType};base64,{Convert.ToBase64String(content)}";
+
+    private static bool TryGetTokenHash(string token, out byte[] hash)
+    {
+        hash = [];
+        try
+        {
+            var tokenBytes = WebEncoders.Base64UrlDecode(token);
+            if (tokenBytes.Length != 32) return false;
+
+            hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token));
+            return true;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
 }

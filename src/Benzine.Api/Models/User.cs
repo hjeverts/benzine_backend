@@ -8,6 +8,8 @@ public class User
     public required string Name { get; set; }
     public byte[]? Avatar { get; set; }
     public string? AvatarContentType { get; set; }
+    public byte[]? PasswordResetTokenHash { get; set; }
+    public DateTime? PasswordResetExpiresAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Vehicle> Vehicles { get; set; } = [];

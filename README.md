@@ -22,6 +22,24 @@ src/Benzine.Api/
 2. `docker compose up --build`
 3. API draait op `http://localhost:5080`, Swagger/OpenAPI op `/openapi/v1.json` (Development only).
 
+## Wachtwoord resetten
+
+Wachtwoordresetlinks worden per e-mail verstuurd en zijn één uur geldig. Configureer
+in `.env` een SMTP-server en de publieke URL waarop de Angular-app bereikbaar is:
+
+```env
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_USE_SSL=true
+EMAIL_USERNAME=gebruikersnaam
+EMAIL_PASSWORD=app-wachtwoord
+EMAIL_FROM=no-reply@example.com
+EMAIL_FRONTEND_URL=https://benzine.example.com
+```
+
+Voor lokale ontwikkeling is `EMAIL_FRONTEND_URL=http://localhost:4200`. Gebruik voor
+een provider die dit vereist een app-wachtwoord, niet het normale accountwachtwoord.
+
 ## Lokaal draaien zonder Docker (development)
 
 ```bash
