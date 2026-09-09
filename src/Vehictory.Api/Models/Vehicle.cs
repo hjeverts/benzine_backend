@@ -13,6 +13,7 @@ public class Vehicle
     public DateOnly? Aankoopdatum { get; set; }
     public byte[]? Foto { get; set; }
     public string? FotoContentType { get; set; }
+    public byte[]? FotoThumbnail { get; set; }
 
     public ICollection<FuelEntry> FuelEntries { get; set; } = [];
     public ICollection<MaintenanceEntry> MaintenanceEntries { get; set; } = [];

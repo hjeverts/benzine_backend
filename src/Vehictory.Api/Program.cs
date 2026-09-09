@@ -73,6 +73,37 @@ using (var scope = app.Services.CreateScope())
         foreach (var user in bootstrapUsers) user.IsAdmin = true;
         db.SaveChanges();
     }
+
+    // Eenmalige backfill: voertuigfoto's die vóór de resize/thumbnail-functionaliteit zijn
+    // geüpload hebben nog geen FotoThumbnail. Zonder deze stap verdwijnen die foto's uit de
+    // voertuigenlijst (die alleen de thumbnail toont) totdat de eigenaar opnieuw uploadt.
+    // Idempotent: na de eerste run heeft elk voertuig met een Foto ook een FotoThumbnail,
+    // dus de query levert bij volgende opstarts niets meer op.
+    var vehiclesToBackfill = db.Vehicles.Where(v => v.Foto != null && v.FotoThumbnail == null).ToList();
+    if (vehiclesToBackfill.Count > 0)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        foreach (var vehicle in vehiclesToBackfill)
+        {
+            try
+            {
+                var (content, contentType, thumbnail) = Vehictory.Api.Controllers.AuthController.ProcessImage(
+                    vehicle.Foto!,
+                    Vehictory.Api.Controllers.VehiclesController.PhotoMaxDimension,
+                    Vehictory.Api.Controllers.VehiclesController.PhotoThumbnailDimension);
+                vehicle.Foto = content;
+                vehicle.FotoContentType = contentType;
+                vehicle.FotoThumbnail = thumbnail;
+            }
+            catch (SixLabors.ImageSharp.ImageFormatException exception)
+            {
+                logger.LogWarning(exception,
+                    "Kon bestaande foto van voertuig {VehicleId} niet backfillen naar thumbnail, sla over.",
+                    vehicle.Id);
+            }
+        }
+        db.SaveChanges();
+    }
 }
 
 if (app.Environment.IsDevelopment())

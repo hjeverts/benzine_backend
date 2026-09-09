@@ -12,6 +12,11 @@ namespace Vehictory.Api.Controllers;
 [Route("api/vehicles")]
 public class VehiclesController(VehictoryDbContext db) : ControllerBase
 {
+    // internal: ook gebruikt door de backfill in Program.cs voor bestaande, vóór deze
+    // functionaliteit opgeslagen foto's.
+    internal const int PhotoMaxDimension = 1600;
+    internal const int PhotoThumbnailDimension = 320;
+
     // Toegankelijk voor de eigenaar én iedereen met wie het voertuig gedeeld is.
     private async Task<Vehicle?> GetAccessibleVehicle(int vehicleId, Guid userId) =>
         await db.Vehicles.SingleOrDefaultAsync(v =>
@@ -23,19 +28,29 @@ public class VehiclesController(VehictoryDbContext db) : ControllerBase
 
     private static VehicleResponse ToResponse(Vehicle v, Guid userId) => new(
         v.Id, v.Naam, v.Merk, v.Type, v.Bouwjaar, v.Aankoopdatum, v.UserId == userId, v.User!.Name,
-        AuthController.ToDataUrl(v.FotoContentType, v.Foto));
+        AuthController.ToDataUrl(v.FotoContentType, v.Foto),
+        AuthController.ToDataUrl("image/jpeg", v.FotoThumbnail));
 
     [HttpGet]
     public async Task<ActionResult<List<VehicleResponse>>> GetAll()
     {
         var userId = this.GetUserId();
+        // Projectie op DB-niveau: de zware Foto-kolom wordt hier bewust niet opgehaald,
+        // de lijst heeft alleen de kleine thumbnail nodig (zie /{id} voor de volledige foto).
         var vehicles = await db.Vehicles
-            .Include(v => v.User)
             .Where(v => v.UserId == userId || v.Shares.Any(s => s.UserId == userId))
             .OrderBy(v => v.Naam)
+            .Select(v => new
+            {
+                v.Id, v.Naam, v.Merk, v.Type, v.Bouwjaar, v.Aankoopdatum, v.UserId,
+                EigenaarNaam = v.User!.Name, v.FotoThumbnail,
+            })
             .ToListAsync();
 
-        return Ok(vehicles.Select(v => ToResponse(v, userId)));
+        return Ok(vehicles.Select(v => new VehicleResponse(
+            v.Id, v.Naam, v.Merk, v.Type, v.Bouwjaar, v.Aankoopdatum, v.UserId == userId, v.EigenaarNaam,
+            null,
+            AuthController.ToDataUrl("image/jpeg", v.FotoThumbnail))));
     }
 
     [HttpGet("{id:int}")]
@@ -107,11 +122,12 @@ public class VehiclesController(VehictoryDbContext db) : ControllerBase
         var vehicle = await GetOwnedVehicle(id, userId);
         if (vehicle is null) return NotFound();
 
-        var image = await AuthController.ReadImage(file);
+        var image = await AuthController.ReadImage(file, PhotoMaxDimension, PhotoThumbnailDimension);
         if (image.Error is not null) return BadRequest(image.Error);
 
         vehicle.Foto = image.Content;
         vehicle.FotoContentType = image.ContentType;
+        vehicle.FotoThumbnail = image.Thumbnail;
         await db.SaveChangesAsync();
         await db.Entry(vehicle).Reference(v => v.User).LoadAsync();
         return Ok(ToResponse(vehicle, userId));
