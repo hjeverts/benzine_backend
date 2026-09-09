@@ -11,4 +11,6 @@ public class MaintenanceEntry
     public required int MaintenanceTypeId { get; set; }
     public MaintenanceType? MaintenanceType { get; set; }
     public string? Notitie { get; set; }
+
+    public ICollection<MaintenanceAttachment> Attachments { get; set; } = [];
 }

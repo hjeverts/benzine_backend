@@ -10,6 +10,7 @@ public class VehictoryDbContext(DbContextOptions<VehictoryDbContext> options) : 
     public DbSet<FuelEntry> FuelEntries => Set<FuelEntry>();
     public DbSet<MaintenanceType> MaintenanceTypes => Set<MaintenanceType>();
     public DbSet<MaintenanceEntry> MaintenanceEntries => Set<MaintenanceEntry>();
+    public DbSet<MaintenanceAttachment> MaintenanceAttachments => Set<MaintenanceAttachment>();
     public DbSet<VehicleShare> VehicleShares => Set<VehicleShare>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -41,6 +42,12 @@ public class VehictoryDbContext(DbContextOptions<VehictoryDbContext> options) : 
             .WithMany(t => t.MaintenanceEntries)
             .HasForeignKey(m => m.MaintenanceTypeId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MaintenanceAttachment>()
+            .HasOne(a => a.MaintenanceEntry)
+            .WithMany(m => m.Attachments)
+            .HasForeignKey(a => a.MaintenanceEntryId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<VehicleShare>()
             .HasOne(s => s.Vehicle)

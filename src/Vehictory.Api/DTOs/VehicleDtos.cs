@@ -50,7 +50,19 @@ public record MaintenanceEntryResponse(
     int Odometer,
     int MaintenanceTypeId,
     string MaintenanceTypeNaam,
-    string? Notitie
+    string? Notitie,
+    List<MaintenanceAttachmentResponse> Attachments
+);
+
+// ThumbnailDataUrl is alleen gevuld voor afbeeldingen (IsImage); voor PDF's null.
+// De volledige inhoud (foto of PDF) haal je op via GET .../maintenance/{id}/attachments/{attachmentId}
+// zodat de lijst-response niet met meerdere MB's aan bijlagen wordt opgeblazen.
+public record MaintenanceAttachmentResponse(
+    int Id,
+    string FileName,
+    string ContentType,
+    bool IsImage,
+    string? ThumbnailDataUrl
 );
 
 public record MaintenanceTypeRequest(string Naam);
