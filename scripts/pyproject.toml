@@ -1,5 +1,5 @@
 [project]
-name = "benzine-migratie"
+name = "vehictory-migratie"
 version = "0.1.0"
 description = "Eenmalige migratie van de oude Dash/parquet-data naar de nieuwe PostgreSQL-database."
 requires-python = ">=3.11"

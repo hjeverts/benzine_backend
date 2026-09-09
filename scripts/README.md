@@ -1,4 +1,4 @@
-# Data-migratie: Benzine-2.0 (Dash/parquet) → benzine_backend (PostgreSQL)
+# Data-migratie: Benzine-2.0 (Dash/parquet) → vehictory_backend (PostgreSQL)
 
 Eenmalig script om je bestaande brandstof- en onderhoudsdata over te zetten
 naar de nieuwe stack. De oude app kende geen accounts per voertuig (alle
@@ -14,11 +14,11 @@ voertuigen die aan één account hangen. Kies daarom vooraf welk account
    `config.yaml` worden **niet** automatisch overgenomen (nieuw account = nieuw
    wachtwoord) — dat is bewust, om het oude cookie-secret/hash-bestand niet
    opnieuw te hoeven vertrouwen.
-2. Zorg dat je de PostgreSQL-database van `benzine_backend` kunt bereiken
+2. Zorg dat je de PostgreSQL-database van `vehictory_backend` kunt bereiken
    (lokaal via `docker compose port postgres 5432`, of direct op de server).
 3. Installeer dependencies met [uv](https://docs.astral.sh/uv/):
    ```bash
-   cd benzine_backend/scripts
+   cd vehictory_backend/scripts
    uv sync
    ```
 4. Draai eerst een dry-run om te zien wat er gemigreerd zou worden:

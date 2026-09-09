@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Migreert de oude Dash/parquet-data (Benzine-2.0) naar de nieuwe PostgreSQL-database
-van benzine_backend.
+van vehictory_backend.
 
 Belangrijk: de nieuwe app werkt met accounts + eigen voertuigen per account. Dit
 script hangt ALLE gemigreerde voertuigen (en hun tankbeurten/onderhoud) aan één

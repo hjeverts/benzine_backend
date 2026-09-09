@@ -1,4 +1,4 @@
-# Benzine Backend
+# Vehictory Backend
 
 ASP.NET Core Web API (.NET 10) voor het bijhouden van brandstofkosten en onderhoud
 per voertuig, per gebruiker. PostgreSQL als database, JWT-authenticatie voor
@@ -7,7 +7,7 @@ web (Angular) en mobiele (Kotlin/Android) clients.
 ## Projectstructuur
 
 ```
-src/Benzine.Api/
+src/Vehictory.Api/
   Controllers/   API-endpoints (Auth, Vehicles, FuelEntries, MaintenanceEntries, MaintenanceTypes)
   Models/        EF Core entities
   DTOs/          Request/response-modellen
@@ -34,7 +34,7 @@ EMAIL_USE_SSL=true
 EMAIL_USERNAME=gebruikersnaam
 EMAIL_PASSWORD=app-wachtwoord
 EMAIL_FROM=no-reply@example.com
-EMAIL_FRONTEND_URL=https://benzine.example.com
+EMAIL_FRONTEND_URL=https://vehictory.example.com
 ```
 
 Voor lokale ontwikkeling is `EMAIL_FRONTEND_URL=http://localhost:4200`. Gebruik voor
@@ -50,7 +50,7 @@ andere accounts bewerken, promoveren of verwijderen.
 ## Lokaal draaien zonder Docker (development)
 
 ```bash
-cd src/Benzine.Api
+cd src/Vehictory.Api
 dotnet user-secrets init
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=benzine;Username=benzine;Password=..."
 dotnet user-secrets set "Jwt:Key" "een-lange-random-string-van-minimaal-32-tekens"

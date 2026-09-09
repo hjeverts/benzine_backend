@@ -1,0 +1,61 @@
+using Vehictory.Api.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Vehictory.Api.Data;
+
+public class VehictoryDbContext(DbContextOptions<VehictoryDbContext> options) : DbContext(options)
+{
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+    public DbSet<FuelEntry> FuelEntries => Set<FuelEntry>();
+    public DbSet<MaintenanceType> MaintenanceTypes => Set<MaintenanceType>();
+    public DbSet<MaintenanceEntry> MaintenanceEntries => Set<MaintenanceEntry>();
+    public DbSet<VehicleShare> VehicleShares => Set<VehicleShare>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+
+        modelBuilder.Entity<Vehicle>()
+            .HasOne(v => v.User)
+            .WithMany(u => u.Vehicles)
+            .HasForeignKey(v => v.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FuelEntry>()
+            .HasOne(f => f.Vehicle)
+            .WithMany(v => v.FuelEntries)
+            .HasForeignKey(f => f.VehicleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MaintenanceEntry>()
+            .HasOne(m => m.Vehicle)
+            .WithMany(v => v.MaintenanceEntries)
+            .HasForeignKey(m => m.VehicleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MaintenanceEntry>()
+            .HasOne(m => m.MaintenanceType)
+            .WithMany(t => t.MaintenanceEntries)
+            .HasForeignKey(m => m.MaintenanceTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<VehicleShare>()
+            .HasOne(s => s.Vehicle)
+            .WithMany(v => v.Shares)
+            .HasForeignKey(s => s.VehicleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VehicleShare>()
+            .HasOne(s => s.User)
+            .WithMany(u => u.SharedVehicles)
+            .HasForeignKey(s => s.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VehicleShare>()
+            .HasIndex(s => new { s.VehicleId, s.UserId })
+            .IsUnique();
+    }
+}

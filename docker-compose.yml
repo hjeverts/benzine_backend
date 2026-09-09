@@ -1,6 +1,6 @@
 # Losse compose voor alleen backend + postgres (ontwikkeling/tests).
 # Voor de volledige stack (postgres + api + frontend) met git-pull/update-script,
-# zie ../benzine_deploy/ (docker-compose.yml + update.sh).
+# zie ../vehictory_deploy/ (docker-compose.yml + update.sh).
 services:
   postgres:
     image: postgres:18
@@ -30,8 +30,8 @@ services:
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-benzine};Username=${POSTGRES_USER:-benzine};Password=${POSTGRES_PASSWORD}"
       Jwt__Key: ${JWT_KEY:?zet JWT_KEY in .env (minimaal 32 tekens)}
-      Jwt__Issuer: "Benzine.Api"
-      Jwt__Audience: "Benzine.Clients"
+      Jwt__Issuer: "Vehictory.Api"
+      Jwt__Audience: "Vehictory.Clients"
       Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN:-http://localhost:4200}
       Email__Host: ${EMAIL_HOST:?zet EMAIL_HOST in .env}
       Email__Port: ${EMAIL_PORT:-587}
